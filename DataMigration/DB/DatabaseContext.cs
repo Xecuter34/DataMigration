@@ -9,6 +9,8 @@ namespace DataMigration.DB
         public DbSet<User> Users { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<Organization> Organizations { get; set; }
+        public DbSet<OrganizationUser> OrganizationUsers { get; set; }
+        public DbSet<UserOldProfile> UserOldProfiles { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder

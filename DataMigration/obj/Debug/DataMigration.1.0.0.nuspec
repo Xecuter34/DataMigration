@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>DataMigration</id>
+    <version>1.0.0</version>
+    <authors>DataMigration</authors>
+    <description>Package Description</description>
+    <dependencies>
+      <group targetFramework=".NETCoreApp3.1">
+        <dependency id="EFCore.NamingConventions" version="5.0.2" exclude="Build,Analyzers" />
+        <dependency id="FastMember" version="1.5.0" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.EntityFrameworkCore" version="5.0.12" exclude="Build,Analyzers" />
+        <dependency id="NDesk.Options" version="0.2.1" exclude="Build,Analyzers" />
+        <dependency id="Newtonsoft.Json" version="13.0.1" exclude="Build,Analyzers" />
+        <dependency id="Npgsql" version="5.0.11" exclude="Build,Analyzers" />
+        <dependency id="Npgsql.EntityFrameworkCore.PostgreSQL" version="5.0.10" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="D:\Repo\Personal\DataMigration\DataMigration\bin\Debug\netcoreapp3.1\DataMigration.runtimeconfig.json" target="lib\netcoreapp3.1\DataMigration.runtimeconfig.json" />
+    <file src="D:\Repo\Personal\DataMigration\DataMigration\bin\Debug\netcoreapp3.1\DataMigration.dll" target="lib\netcoreapp3.1\DataMigration.dll" />
+  </files>
+</package>
