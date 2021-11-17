@@ -2,7 +2,13 @@
   "profiles": {
     "DataMigration": {
       "commandName": "Project",
-      "commandLineArgs": "host=lcoalhost port=5432 username=test password=password"
+      "environmentVariables": {
+        "Username": "postgres",
+        "Host": "localhost",
+        "Password": "sJvCv34QYVAy",
+        "Port": "5433",
+        "Database": "edge_dev"
+      }
     }
   }
 }

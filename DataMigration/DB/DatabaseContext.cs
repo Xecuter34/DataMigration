@@ -1,5 +1,6 @@
 ﻿using DataMigration.DB.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace DataMigration.DB
 {
@@ -11,7 +12,11 @@ namespace DataMigration.DB
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder
-                .UseNpgsql("Host=localhost;Port=5433;Database=edge_dev;Username=postgres;Password=sJvCv34QYVAy")
+                .UseNpgsql($"Host={Environment.GetEnvironmentVariable("Host")};" +
+                    $"Port={Environment.GetEnvironmentVariable("Port")};" +
+                    $"Database={Environment.GetEnvironmentVariable("Database")};" +
+                    $"Username={Environment.GetEnvironmentVariable("Username")};" +
+                    $"Password={Environment.GetEnvironmentVariable("Password")}")
                 .UseSnakeCaseNamingConvention();
     }
 }
