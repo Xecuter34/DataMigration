@@ -10,11 +10,10 @@ namespace DataMigration
 {
     class Migrations
     {
-        public async Task MigrateUsersAsync(string userData)
+        public static async Task MigrateUsersAsync(string userData)
         {
             List<OldModel.Users> users = JsonSerializer.Deserialize<List<OldModel.Users>>(userData);
             using DatabaseContext dbContext = new DatabaseContext();
-
 
             for (int i = 0; i < users.Count; i++)
             {
@@ -60,6 +59,32 @@ namespace DataMigration
                 });
                 await dbContext.SaveChangesAsync();
             }
+
+            Console.WriteLine("Successfully migrated users.\n");
+        }
+
+        public static async Task MigrateOrganisationAsync(string orgData)
+        {
+            List<OldModel.Organizations> orgs = JsonSerializer.Deserialize<List<OldModel.Organizations>>(orgData);
+            using DatabaseContext dbContext = new DatabaseContext();
+
+            for (int i = 0; i < orgs.Count; i++)
+            {
+                Console.Write($"\rMigrating org to organizations [{i + 1}/{orgs.Count}]");
+                Guid newOrgId = Guid.NewGuid();
+
+                dbContext.Add(new Organization
+                {
+                    Id = newOrgId,
+                    Name = orgs[i].name,
+                    Validated = orgs[i].validated,
+                    Logo = orgs[i].logo,
+                    WhiteLabelEnabled = orgs[i].whiteLabelEnabled
+                });
+                await dbContext.SaveChangesAsync();
+            }
+
+            Console.WriteLine("Successfully migrated organizations.\n");
         }
     }
 }
