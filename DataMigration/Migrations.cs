@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using DataMigration.DB;
 using DataMigration.DB.Models;
+using DataMigration.OldModel.Generics;
 
 namespace DataMigration
 {
@@ -38,10 +39,6 @@ namespace DataMigration
                 });
                 await dbContext.SaveChangesAsync();
 
-                string verifiedAt = users[i].verifiedAt?.date;
-                string createdAt = users[i].createdAt?.date;
-                string updatedAt = users[i].updatedAt?.date;
-
                 dbContext.Add(new User
                 {
                     Id = newUserId,
@@ -51,16 +48,23 @@ namespace DataMigration
                     LastName = users[i].lastName,
                     TermsSigned = users[i].termsSigned,
                     SignupPreferenceId = users[i].signupPreference == "creator" ? 1 : 2,
-                    VerifiedAt = Convert.ToDateTime(verifiedAt),
+                    VerifiedAt = Convert.ToDateTime(users[i].verifiedAt?.date),
                     ValidationToken = users[i].validationToken,
-                    CreatedAt = Convert.ToDateTime(createdAt),
-                    UpdatedAt = Convert.ToDateTime(updatedAt),
+                    CreatedAt = Convert.ToDateTime(users[i].createdAt?.date),
+                    UpdatedAt = Convert.ToDateTime(users[i].updatedAt?.date),
                     AddressId = null
+                });
+                await dbContext.SaveChangesAsync();
+
+                dbContext.Add(new UserOldProfile
+                {
+                    NewUserId = newUserId,
+                    OldUserId = users[i]._id.oid
                 });
                 await dbContext.SaveChangesAsync();
             }
 
-            Console.WriteLine("Successfully migrated users.\n");
+            Console.WriteLine("\nSuccessfully migrated users.");
         }
 
         public static async Task MigrateOrganisationAsync(string orgData)
@@ -77,14 +81,32 @@ namespace DataMigration
                 {
                     Id = newOrgId,
                     Name = orgs[i].name,
-                    Validated = orgs[i].validated,
+                    Validated = orgs[i].validated != null && (bool) orgs[i].validated,
                     Logo = orgs[i].logo,
-                    WhiteLabelEnabled = orgs[i].whiteLabelEnabled
+                    WhiteLabelEnabled = orgs[i].whiteLabelEnabled != null && (bool) orgs[i].whiteLabelEnabled
                 });
                 await dbContext.SaveChangesAsync();
+
+                foreach (ObjectId admin in orgs[i].admins)
+                {
+                    List<Guid> userOldProfiles = dbContext.UserOldProfiles
+                        .Where(u => u.OldUserId == admin.oid)
+                        .Select(u => u.NewUserId)
+                        .ToList();
+
+                    if (userOldProfiles.Count > 0)
+                    {
+                        dbContext.Add(new OrganizationUser
+                        {
+                            UserId = userOldProfiles[0],
+                            OrganizationId = newOrgId
+                        });
+                        await dbContext.SaveChangesAsync();
+                    }
+                }
             }
 
-            Console.WriteLine("Successfully migrated organizations.\n");
+            Console.WriteLine("\nSuccessfully migrated organizations.");
         }
     }
 }

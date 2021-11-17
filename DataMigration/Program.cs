@@ -20,7 +20,7 @@ namespace DataMigration
             }
             else
             {
-                files = HandlePath("D:\\Repo\\Edge\\");
+                files = HandlePath("D:\\Repo\\Edge");
             }
 
             if (files.Count == 0)
@@ -36,6 +36,7 @@ namespace DataMigration
         {
             await Migrations.MigrateUsersAsync(files["users"]);
             await Migrations.MigrateOrganisationAsync(files["organizations"]);
+
             Console.WriteLine("\nMigration Completed successfully.");
         }
         private static IDictionary<string, string> HandlePath(string path)
@@ -52,7 +53,7 @@ namespace DataMigration
                     {
                         if (Path.GetExtension(filePath) == ".json")
                         {
-                            string fileData = File.ReadAllText(path);
+                            string fileData = File.ReadAllText(filePath);
                             string fileName = Path.GetFileName(filePath).Split(".")[0];
                             files.Add(fileName, fileData);
                         }
