@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DataMigration": {
+      "commandName": "Project",
+      "commandLineArgs": "host=lcoalhost port=5432 username=test password=password"
+    }
+  }
+}
