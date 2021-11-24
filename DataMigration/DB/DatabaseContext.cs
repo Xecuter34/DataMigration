@@ -16,6 +16,12 @@ namespace DataMigration.DB
         public DbSet<CreatorSocialRefresh> CreatorSocialRefreshes { get; set; }
         public DbSet<CreatorSocialRefreshData> CreatorSocialRefreshData { get; set; }
         public DbSet<SocialPlatform> SocialPlatforms { get; set; }
+        public DbSet<SocialAccountPost> SocialAccountPosts { get; set; }
+        public DbSet<SocialAccountPostStatHistory> SocialAccountPostStatHistories { get; set; }
+        public DbSet<SocialAccountPostStatLatest> SocialAccountPostStatLatests { get; set; }
+        public DbSet<SocialAccountStatHistory> SocialAccountStatHistories { get; set; }
+        public DbSet<SocialAccountStatLatest> SocialAccountStatLatests { get; set; }
+        public DbSet<SocialAccountStatMetrics> SocialAccountStatMetrics { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder

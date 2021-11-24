@@ -194,6 +194,14 @@ namespace DataMigration
             for (int i = 0; i < posts.Count; i++)
             {
                 progressBar.Report((double)(i + 1) / 100);
+                Guid newPostId = Guid.NewGuid();
+
+                // TODO: Add the rest of the logic once we know where everything is going
+                dbContext.Add(new SocialAccountPost
+                {
+                    Id = newPostId
+                });
+
                 Console.WriteLine(posts[i]);
             }
         }

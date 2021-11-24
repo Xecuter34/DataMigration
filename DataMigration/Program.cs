@@ -34,9 +34,9 @@ namespace DataMigration
 
         private async static Task Migrate(IDictionary<string, string> files)
         {
-            //await Migrations.MigrateUsersAsync(files["users"]);
-            //await Migrations.MigrateOrganisationsAsync(files["organizations"]);
-            //await Migrations.MigrateAccountsAsync(files["trackedSocials"], files["accounts"]);
+            await Migrations.MigrateUsersAsync(files["users"]);
+            await Migrations.MigrateOrganisationsAsync(files["organizations"]);
+            await Migrations.MigrateAccountsAsync(files["trackedSocials"], files["accounts"]);
             await Migrations.MigratePostAsync(files["posts"], files["detailedpostclusters"]);
             Console.WriteLine("\nMigration Completed successfully.");
         }
