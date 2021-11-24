@@ -34,11 +34,13 @@ namespace DataMigration
 
         private async static Task Migrate(IDictionary<string, string> files)
         {
-            await Migrations.MigrateUsersAsync(files["users"]);
-            await Migrations.MigrateOrganisationAsync(files["organizations"]);
-
+            //await Migrations.MigrateUsersAsync(files["users"]);
+            //await Migrations.MigrateOrganisationsAsync(files["organizations"]);
+            //await Migrations.MigrateAccountsAsync(files["trackedSocials"], files["accounts"]);
+            await Migrations.MigratePostAsync(files["posts"], files["detailedpostclusters"]);
             Console.WriteLine("\nMigration Completed successfully.");
         }
+
         private static IDictionary<string, string> HandlePath(string path)
         {
             IDictionary<string, string> files = new Dictionary<string, string>();

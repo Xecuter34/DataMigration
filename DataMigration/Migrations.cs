@@ -13,12 +13,16 @@ namespace DataMigration
     {
         public static async Task MigrateUsersAsync(string userData)
         {
+            if (userData == null) return;
             List<OldModel.Users> users = JsonSerializer.Deserialize<List<OldModel.Users>>(userData);
             using DatabaseContext dbContext = new DatabaseContext();
+            using ProgressBar progressBar = new ProgressBar();
 
+            Console.Write($"Migrating user data... ");
             for (int i = 0; i < users.Count; i++)
             {
-                Console.Write($"\rMigrating user to users [{i + 1}/{users.Count}]");
+                progressBar.Report((double)(i + 1) / 100);
+
                 Guid newUserId = Guid.NewGuid();
                 DateTime dob = new DateTime();
 
@@ -64,19 +68,22 @@ namespace DataMigration
                 await dbContext.SaveChangesAsync();
             }
 
-            Console.WriteLine("\nSuccessfully migrated users.");
+            Console.WriteLine("Done.");
         }
 
-        public static async Task MigrateOrganisationAsync(string orgData)
+        public static async Task MigrateOrganisationsAsync(string orgData)
         {
+            if (orgData == null) return;
             List<OldModel.Organizations> orgs = JsonSerializer.Deserialize<List<OldModel.Organizations>>(orgData);
             using DatabaseContext dbContext = new DatabaseContext();
+            using ProgressBar progressBar = new ProgressBar();
 
+            Console.Write($"Migrating organization data... ");
             for (int i = 0; i < orgs.Count; i++)
             {
-                Console.Write($"\rMigrating org to organizations [{i + 1}/{orgs.Count}]");
-                Guid newOrgId = Guid.NewGuid();
+                progressBar.Report((double)(i + 1) / 100);
 
+                Guid newOrgId = Guid.NewGuid();
                 dbContext.Add(new Organization
                 {
                     Id = newOrgId,
@@ -106,7 +113,89 @@ namespace DataMigration
                 }
             }
 
-            Console.WriteLine("\nSuccessfully migrated organizations.");
+            Console.WriteLine("Done.");
+        }
+
+        public static async Task MigrateAccountsAsync(string trackedSocialData, string accountsData)
+        {
+            if (trackedSocialData == null || accountsData == null) return;
+
+            List<OldModel.Accounts> accounts = JsonSerializer.Deserialize<List<OldModel.Accounts>>(accountsData);
+            List<OldModel.TrackedSocials> trackedSocials = JsonSerializer.Deserialize<List<OldModel.TrackedSocials>>(trackedSocialData);
+            using DatabaseContext dbContext = new DatabaseContext();
+            using ProgressBar progressBar = new ProgressBar();
+
+            Console.Write($"Migrating accounts data... ");
+            for (int i = 0; i < accounts.Count; i++)
+            {
+                progressBar.Report((double)(i + 1) / 100);
+
+                OldModel.TrackedSocials trackedSocial = trackedSocials.Find(t => t.connectionId.oid == accounts[i]._id.oid);
+
+                Guid creatorId = Guid.NewGuid();
+                // Rest of schema doesn't exist on old/can't create value for it...
+                dbContext.Add(new Creator
+                {
+                    Id = creatorId,
+                    UserId = Guid.Parse(accounts[i].uniqueIdentifiers.oauthLookupId)
+                });
+                await dbContext.SaveChangesAsync();
+
+                int socialPlatformId = 0;
+                switch (accounts[i].platform)
+                {
+                    case "instagram":
+                        socialPlatformId = (int)Enum.SocialPlatforms.INSTAGRAM;
+                        break;
+                    case "twitter":
+                        socialPlatformId = (int)Enum.SocialPlatforms.TWITTER;
+                        break;
+                    case "facebook":
+                        socialPlatformId = (int)Enum.SocialPlatforms.FACEBOOK;
+                        break;
+                    case "youtube":
+                        socialPlatformId = (int)Enum.SocialPlatforms.YOUTUBE;
+                        break;
+                    case "twitch":
+                        socialPlatformId = (int)Enum.SocialPlatforms.TWITCH;
+                        break;
+                }
+
+                dbContext.Add(new CreatorSocialAccount
+                {
+                    CreatorId = creatorId,
+                    // TODO: Find out what the enum looks like and which platform has which ID.
+                    SocialPlatformId = socialPlatformId,
+                    // TODO: Check to see if needs changing (What is the enum going to look like?)
+                    Status = accounts[i].archived 
+                        ? (int)Enum.AccountStatus.ARCHIVED 
+                        : (int)Enum.AccountStatus.ACTIVE,
+                    Name = accounts[i].meta.name,
+                    Avatar = accounts[i].meta.avatar,
+                    Token = accounts[i].uniqueIdentifiers.oauthLookupId,
+                    ConnectedAt = Convert.ToDateTime(accounts[i].connectedOn?.date),
+                    UpdatedAt = Convert.ToDateTime(accounts[i].updatedAt?.date)
+                });
+                await dbContext.SaveChangesAsync();
+            }
+
+            Console.WriteLine("Done.");
+        }
+
+        public static async Task MigratePostAsync(string postsData, string detailedPostClusterData)
+        {
+            if (postsData == null || detailedPostClusterData == null) return;
+
+            List<OldModel.Posts> posts = JsonSerializer.Deserialize<List<OldModel.Posts>>(postsData);
+            List<OldModel.DetailedPostsCluster> detailedPostClusters = JsonSerializer.Deserialize<List<OldModel.DetailedPostsCluster>>(detailedPostClusterData);
+            using DatabaseContext dbContext = new DatabaseContext();
+            using ProgressBar progressBar = new ProgressBar();
+
+            for (int i = 0; i < posts.Count; i++)
+            {
+                progressBar.Report((double)(i + 1) / 100);
+                Console.WriteLine(posts[i]);
+            }
         }
     }
 }
