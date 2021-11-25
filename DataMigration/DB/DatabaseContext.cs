@@ -22,6 +22,7 @@ namespace DataMigration.DB
         public DbSet<SocialAccountStatHistory> SocialAccountStatHistories { get; set; }
         public DbSet<SocialAccountStatLatest> SocialAccountStatLatests { get; set; }
         public DbSet<SocialAccountStatMetrics> SocialAccountStatMetrics { get; set; }
+        public DbSet<AccountsOldProfile> AccountsOldProfiles { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder
