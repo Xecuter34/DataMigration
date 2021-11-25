@@ -8,7 +8,7 @@ namespace DataMigration.DB.Models
     {
         public int Id { get; set; }
         public int SocialPlatformId { get; set; }
-        public string slug { get; set; }
-        public string name { get; set; }
+        public string Slug { get; set; }
+        public string Name { get; set; }
     }
 }

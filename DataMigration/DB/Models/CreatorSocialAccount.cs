@@ -6,9 +6,10 @@ namespace DataMigration.DB.Models
 {
     public class CreatorSocialAccount
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public Guid CreatorId { get; set; }
         public int SocialPlatformId { get; set; }
+        public string SocialPlatformUserId { get; set; }
         public int Status { get; set; }
         public string Name { get; set; }
         public string Avatar { get; set; }

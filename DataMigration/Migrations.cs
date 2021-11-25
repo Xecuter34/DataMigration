@@ -35,7 +35,7 @@ namespace DataMigration
                 }
                 catch (Exception) { }
 
-                dbContext.Add(new UserProfile
+                await dbContext.AddAsync(new UserProfile
                 {
                     UserId = newUserId,
                     Dob = dob,
@@ -43,7 +43,7 @@ namespace DataMigration
                 });
                 await dbContext.SaveChangesAsync();
 
-                dbContext.Add(new User
+                await dbContext.AddAsync(new User
                 {
                     Id = newUserId,
                     Email = users[i].email,
@@ -60,7 +60,7 @@ namespace DataMigration
                 });
                 await dbContext.SaveChangesAsync();
 
-                dbContext.Add(new UserOldProfile
+                await dbContext.AddAsync(new UserOldProfile
                 {
                     NewUserId = newUserId,
                     OldUserId = users[i]._id.oid
@@ -84,7 +84,7 @@ namespace DataMigration
                 progressBar.Report((double)(i + 1) / 100);
 
                 Guid newOrgId = Guid.NewGuid();
-                dbContext.Add(new Organization
+                await dbContext.AddAsync(new Organization
                 {
                     Id = newOrgId,
                     Name = orgs[i].name,
@@ -103,7 +103,7 @@ namespace DataMigration
 
                     if (userOldProfiles.Count > 0)
                     {
-                        dbContext.Add(new OrganizationUser
+                        await dbContext.AddAsync(new OrganizationUser
                         {
                             UserId = userOldProfiles[0],
                             OrganizationId = newOrgId
@@ -133,11 +133,18 @@ namespace DataMigration
                 OldModel.TrackedSocials trackedSocial = trackedSocials.Find(t => t.connectionId.oid == accounts[i]._id.oid);
 
                 Guid creatorId = Guid.NewGuid();
+                await dbContext.AddAsync(new AccountsOldProfile
+                {
+                    NewAccountId = creatorId,
+                    OldAccountId = accounts[i]._id.oid
+                });
+                await dbContext.SaveChangesAsync();
+
                 // Rest of schema doesn't exist on old/can't create value for it...
-                dbContext.Add(new Creator
+                await dbContext.AddAsync(new Creator
                 {
                     Id = creatorId,
-                    UserId = Guid.Parse(accounts[i].uniqueIdentifiers.oauthLookupId)
+                    UserId = dbContext.UserOldProfiles.Where(user => user.OldUserId == accounts[i].uniqueIdentifiers.oauthLookupId).First().NewUserId
                 });
                 await dbContext.SaveChangesAsync();
 
@@ -161,17 +168,19 @@ namespace DataMigration
                         break;
                 }
 
-                dbContext.Add(new CreatorSocialAccount
+                await dbContext.AddAsync(new CreatorSocialAccount
                 {
                     CreatorId = creatorId,
                     // TODO: Find out what the enum looks like and which platform has which ID.
                     SocialPlatformId = socialPlatformId,
+                    SocialPlatformUserId = accounts[i].uniqueIdentifiers.platformUserId,
                     // TODO: Check to see if needs changing (What is the enum going to look like?)
                     Status = accounts[i].archived 
                         ? (int)Enum.AccountStatus.ARCHIVED 
                         : (int)Enum.AccountStatus.ACTIVE,
                     Name = accounts[i].meta.name,
                     Avatar = accounts[i].meta.avatar,
+                    // Get token from oauth database with refresh token too
                     Token = accounts[i].uniqueIdentifiers.oauthLookupId,
                     ConnectedAt = Convert.ToDateTime(accounts[i].connectedOn?.date),
                     UpdatedAt = Convert.ToDateTime(accounts[i].updatedAt?.date)
@@ -194,13 +203,91 @@ namespace DataMigration
             for (int i = 0; i < posts.Count; i++)
             {
                 progressBar.Report((double)(i + 1) / 100);
+                OldModel.DetailedPostsCluster detailedPostCluster = detailedPostClusters.Find(p => p.postId.oid == posts[i]._id.oid);
                 Guid newPostId = Guid.NewGuid();
+                Guid accountId = dbContext.AccountsOldProfiles.Where(account => account.OldAccountId == posts[i].accountId).First().NewAccountId;
+                CreatorSocialAccount creatorSocialAccount = dbContext.CreatorSocialAccounts.Where(account => account.Id == accountId).First();
 
                 // TODO: Add the rest of the logic once we know where everything is going
-                dbContext.Add(new SocialAccountPost
+                await dbContext.AddAsync(new SocialAccountPost
                 {
-                    Id = newPostId
+                    Id = newPostId,
+                    CreatorSocialAccountId = accountId,
+                    SocialMediaUid = creatorSocialAccount.SocialPlatformUserId,
+                    CreatedAt = Convert.ToDateTime(posts[i].createdAt?.date)
                 });
+                await dbContext.SaveChangesAsync();
+
+                await dbContext.AddAsync(new CreatorSocialRefresh
+                {
+                    CreatorSocialAccountId = creatorSocialAccount.Id,
+                    StartAt = Convert.ToDateTime(detailedPostCluster.startDate?.date),
+                    EndAt = Convert.ToDateTime(detailedPostCluster.endDate?.date),
+                    Status = (int)Enum.RefreshStatus.COMPLETED,
+                    NumOfApiCalls = 1
+                });
+                await dbContext.SaveChangesAsync();
+
+                switch (posts[i].platform)
+                {
+                    case "twitter":
+                        await dbContext.AddAsync(new SocialAccountStatMetrics
+                        {
+                            SocialPlatformId = (int)Enum.SocialPlatforms.TWITTER,
+                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            Name = $"Twitter Post - {posts[i].platformPostId}"
+                        });
+                        break;
+                    case "instagram":
+                        await dbContext.AddAsync(new SocialAccountStatMetrics
+                        {
+                            SocialPlatformId = (int)Enum.SocialPlatforms.INSTAGRAM,
+                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            Name = $"Instagram Post - {posts[i].platformPostId}"
+                        });
+                        break;
+                    case "twitch":
+                        await dbContext.AddAsync(new SocialAccountStatMetrics
+                        {
+                            SocialPlatformId = (int)Enum.SocialPlatforms.TWITCH,
+                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            Name = $"Twitch Post - {posts[i].platformPostId}"
+                        });
+                        break;
+                    case "youtube":
+                        await dbContext.AddAsync(new SocialAccountStatMetrics
+                        {
+                            SocialPlatformId = (int)Enum.SocialPlatforms.YOUTUBE,
+                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            Name = $"YouTube Post - {posts[i].platformPostId}"
+                        });
+                        break;
+                    case "facebook":
+                        await dbContext.AddAsync(new SocialAccountStatMetrics
+                        {
+                            SocialPlatformId = (int)Enum.SocialPlatforms.FACEBOOK,
+                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            Name = $"Facebook Post - {posts[i].platformPostId}"
+                        });
+                        break;
+                }
+                await dbContext.SaveChangesAsync();
+
+                foreach (Slices slice in detailedPostCluster.slices)
+                {
+                    await dbContext.AddAsync(new SocialAccountPostStatHistory
+                    {
+                        SocialAccountPostId = newPostId,
+                        SocialAccountStatMetricId = dbContext.SocialAccountStatMetrics
+                            .Where(metric => metric.Slug == $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}")
+                            .First().Id,
+                        CreatorSocialRefreshId = dbContext.CreatorSocialRefreshes
+                            .Where(account => account.CreatorSocialAccountId == creatorSocialAccount.Id)
+                            .Last().Id,
+                        CollectedAt = Convert.ToDateTime(posts[i].createdAt?.date)
+                    });
+                }
+                await dbContext.SaveChangesAsync();
 
                 Console.WriteLine(posts[i]);
             }
