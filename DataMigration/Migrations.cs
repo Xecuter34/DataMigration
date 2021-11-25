@@ -202,6 +202,7 @@ namespace DataMigration
             using DatabaseContext dbContext = new DatabaseContext();
             using ProgressBar progressBar = new ProgressBar();
 
+            Console.Write($"Migrating posts data... ");
             for (int i = 0; i < posts.Count; i++)
             {
                 progressBar.Report((double)(i + 1) / 100);
@@ -303,6 +304,7 @@ namespace DataMigration
             using DatabaseContext dbContext = new DatabaseContext();
             using ProgressBar progressBar = new ProgressBar();
 
+            Console.Write($"Migrating stats data... ");
             for (int i = 0; i < detailedStatsClusters.Count; i++)
             {
                 progressBar.Report((double)(i + 1) / 100);
