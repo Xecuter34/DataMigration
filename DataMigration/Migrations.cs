@@ -116,12 +116,13 @@ namespace DataMigration
             Console.WriteLine("Done.");
         }
 
-        public static async Task MigrateAccountsAsync(string trackedSocialData, string accountsData)
+        public static async Task MigrateAccountsAsync(string trackedSocialData, string accountsData, string oauthFlowStoragesData)
         {
-            if (trackedSocialData == null || accountsData == null) return;
+            if (trackedSocialData == null || accountsData == null || oauthFlowStoragesData == null) return;
 
             List<OldModel.Accounts> accounts = JsonSerializer.Deserialize<List<OldModel.Accounts>>(accountsData);
             List<OldModel.TrackedSocials> trackedSocials = JsonSerializer.Deserialize<List<OldModel.TrackedSocials>>(trackedSocialData);
+            List<OldModel.OAuthFlowStorages> oauthFlowStorages = JsonSerializer.Deserialize<List<OldModel.OAuthFlowStorages>>(oauthFlowStoragesData);
             using DatabaseContext dbContext = new DatabaseContext();
             using ProgressBar progressBar = new ProgressBar();
 
@@ -131,6 +132,7 @@ namespace DataMigration
                 progressBar.Report((double)(i + 1) / 100);
 
                 OldModel.TrackedSocials trackedSocial = trackedSocials.Find(t => t.connectionId.oid == accounts[i]._id.oid);
+                OldModel.OAuthFlowStorages oAuthFlowStorage = oauthFlowStorages.Find(o => o.platformUserId == accounts[i].uniqueIdentifiers.platformUserId);
 
                 Guid creatorId = Guid.NewGuid();
                 await dbContext.AddAsync(new AccountsOldProfile
@@ -180,8 +182,8 @@ namespace DataMigration
                         : (int)Enum.AccountStatus.ACTIVE,
                     Name = accounts[i].meta.name,
                     Avatar = accounts[i].meta.avatar,
-                    // Get token from oauth database with refresh token too
-                    Token = accounts[i].uniqueIdentifiers.oauthLookupId,
+                    Token = oAuthFlowStorage.accessToken,
+                    RefreshToken = oAuthFlowStorage.refreshToken,
                     ConnectedAt = Convert.ToDateTime(accounts[i].connectedOn?.date),
                     UpdatedAt = Convert.ToDateTime(accounts[i].updatedAt?.date)
                 });
@@ -288,9 +290,50 @@ namespace DataMigration
                     });
                 }
                 await dbContext.SaveChangesAsync();
-
-                Console.WriteLine(posts[i]);
             }
+
+            Console.WriteLine("Done.");
+        }
+
+        public static async Task MigrateStatsAsync(string detailedStatClusterData)
+        {
+            if (detailedStatClusterData == null) return;
+
+            List<OldModel.DetailedStatsCluster> detailedStatsClusters = JsonSerializer.Deserialize<List<OldModel.DetailedStatsCluster>>(detailedStatClusterData);
+            using DatabaseContext dbContext = new DatabaseContext();
+            using ProgressBar progressBar = new ProgressBar();
+
+            for (int i = 0; i < detailedStatsClusters.Count; i++)
+            {
+                progressBar.Report((double)(i + 1) / 100);
+                Guid accountId = dbContext.AccountsOldProfiles.Where(account => account.OldAccountId == detailedStatsClusters[i].accountId.oid).First().NewAccountId;
+                CreatorSocialAccount creatorSocialAccount = dbContext.CreatorSocialAccounts.Where(account => account.Id == accountId).First();
+
+                await dbContext.AddAsync(new SocialAccountStatMetrics
+                {
+                    SocialPlatformId = creatorSocialAccount.SocialPlatformId,
+                    Slug = $"{creatorSocialAccount.SocialPlatformUserId}",
+                    Name = $"Account Stat - {detailedStatsClusters[i].accountId.oid}"
+                });
+                await dbContext.SaveChangesAsync();
+
+                foreach (Slices slice in detailedStatsClusters[i].slices)
+                {
+                    await dbContext.AddAsync(new SocialAccountStatHistory
+                    {
+                        SocialAccountStatMetricId = dbContext.SocialAccountStatMetrics
+                        .Where(metric => metric.Slug == $"{creatorSocialAccount.SocialPlatformUserId}")
+                        .Last().Id,
+                        CreatorSocialRefreshId = dbContext.CreatorSocialRefreshes
+                        .Where(account => account.CreatorSocialAccountId == creatorSocialAccount.Id)
+                        .Last().Id,
+                        CollectedAt = Convert.ToDateTime(detailedStatsClusters[i].startDate?.date)
+                    });
+                }
+                await dbContext.SaveChangesAsync();
+            }
+
+            Console.WriteLine("Done.");
         }
     }
 }

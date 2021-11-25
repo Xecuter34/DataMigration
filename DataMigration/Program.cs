@@ -36,8 +36,9 @@ namespace DataMigration
         {
             await Migrations.MigrateUsersAsync(files["users"]);
             await Migrations.MigrateOrganisationsAsync(files["organizations"]);
-            await Migrations.MigrateAccountsAsync(files["trackedSocials"], files["accounts"]);
+            await Migrations.MigrateAccountsAsync(files["trackedSocials"], files["accounts"], files["oauthflowstorages"]);
             await Migrations.MigratePostAsync(files["posts"], files["detailedpostclusters"]);
+            await Migrations.MigrateStatsAsync(files["detailedstatclusters"]);
             Console.WriteLine("\nMigration Completed successfully.");
         }
 

@@ -14,7 +14,7 @@ namespace DataMigration.DB.Models
         public string Name { get; set; }
         public string Avatar { get; set; }
         public string Token { get; set; }
-        public Guid RefreshToken { get; set; }
+        public string RefreshToken { get; set; }
         public DateTime ConnectedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
