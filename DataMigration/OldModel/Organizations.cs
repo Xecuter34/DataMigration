@@ -3,7 +3,7 @@ using DataMigration.OldModel.Generics;
 
 namespace DataMigration.OldModel
 {
-    class Organizations
+    class Organisations
     {
         public ObjectId _id { get; set; }
         public object address { get; set; }
