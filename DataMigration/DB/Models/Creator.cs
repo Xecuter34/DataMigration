@@ -8,8 +8,12 @@ namespace DataMigration.DB.Models
     {
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
-        public int AddressId { get; set; }
+        public Guid AddressId { get; set; }
         public DateTime DateOfBirth { get; set; }
         public bool IsPrivate { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public DateTime DeletedAt { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }

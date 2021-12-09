@@ -8,8 +8,8 @@ namespace DataMigration.DB
     {
         public DbSet<User> Users { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
-        public DbSet<Organization> Organizations { get; set; }
-        public DbSet<OrganizationUser> OrganizationUsers { get; set; }
+        public DbSet<Organisation> Organisations { get; set; }
+        public DbSet<OrganisationUser> OrganisationUsers { get; set; }
         public DbSet<UserOldProfile> UserOldProfiles { get; set; }
         public DbSet<Creator> Creators { get; set; }
         public DbSet<CreatorSocialAccount> CreatorSocialAccounts { get; set; }
@@ -32,5 +32,14 @@ namespace DataMigration.DB
                     $"Username={Environment.GetEnvironmentVariable("Username")};" +
                     $"Password={Environment.GetEnvironmentVariable("Password")}")
                 .UseSnakeCaseNamingConvention();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<CreatorSocialAccount>(
+                eb =>
+                {
+                    eb.Property(c => c.Status).HasColumnType("SocialAccountStatus");
+                });
+        }
     }
 }

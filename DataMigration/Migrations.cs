@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DataMigration.DB;
 using DataMigration.DB.Models;
 using DataMigration.OldModel.Generics;
+using DataMigration.Utils;
 
 namespace DataMigration
 {
@@ -14,7 +15,7 @@ namespace DataMigration
         public static async Task MigrateUsersAsync(string userData)
         {
             if (userData == null) return;
-            List<OldModel.Users> users = JsonSerializer.Deserialize<List<OldModel.Users>>(userData);
+            List<OldModel.Users> users = Validator.GetValidUsersAsync(JsonSerializer.Deserialize<List<OldModel.Users>>(userData));
             using DatabaseContext dbContext = new DatabaseContext();
             using ProgressBar progressBar = new ProgressBar();
 
@@ -35,28 +36,23 @@ namespace DataMigration
                 }
                 catch (Exception) { }
 
-                await dbContext.AddAsync(new UserProfile
-                {
-                    UserId = newUserId,
-                    Dob = dob,
-                    Username = users[i].username
-                });
-                await dbContext.SaveChangesAsync();
+                //await dbContext.AddAsync(new UserProfile
+                //{
+                //    UserId = newUserId,
+                //    Dob = dob,
+                //    Username = users[i].username
+                //});
+                //await dbContext.SaveChangesAsync();
 
                 await dbContext.AddAsync(new User
                 {
                     Id = newUserId,
-                    Email = users[i].email,
-                    Password = users[i].password,
-                    FirstName = users[i].firstName,
-                    LastName = users[i].lastName,
-                    TermsSigned = users[i].termsSigned,
-                    SignupPreferenceId = users[i].signupPreference == "creator" ? 1 : 2,
-                    VerifiedAt = Convert.ToDateTime(users[i].verifiedAt?.date),
-                    ValidationToken = users[i].validationToken,
+                    Email = users[i].email ?? "NOT_SUPPLIED",
+                    Password = users[i].password ?? "NOT_SUPPLIED",
+                    FirstName = users[i].firstName ?? "NOT_SUPPLIED",
+                    LastName = users[i].lastName ?? "NOT_SUPPLIED",
                     CreatedAt = Convert.ToDateTime(users[i].createdAt?.date),
                     UpdatedAt = Convert.ToDateTime(users[i].updatedAt?.date),
-                    AddressId = null
                 });
                 await dbContext.SaveChangesAsync();
 
@@ -74,23 +70,22 @@ namespace DataMigration
         public static async Task MigrateOrganisationsAsync(string orgData)
         {
             if (orgData == null) return;
-            List<OldModel.Organizations> orgs = JsonSerializer.Deserialize<List<OldModel.Organizations>>(orgData);
+            List<OldModel.Organisations> orgs = JsonSerializer.Deserialize<List<OldModel.Organisations>>(orgData);
             using DatabaseContext dbContext = new DatabaseContext();
             using ProgressBar progressBar = new ProgressBar();
 
-            Console.Write($"Migrating organization data... ");
+            Console.Write($"Migrating Organisation data... ");
             for (int i = 0; i < orgs.Count; i++)
             {
                 progressBar.Report((double)(i + 1) / 100);
 
                 Guid newOrgId = Guid.NewGuid();
-                await dbContext.AddAsync(new Organization
+                await dbContext.AddAsync(new Organisation
                 {
                     Id = newOrgId,
                     Name = orgs[i].name,
-                    Validated = orgs[i].validated != null && (bool) orgs[i].validated,
-                    Logo = orgs[i].logo,
-                    WhiteLabelEnabled = orgs[i].whiteLabelEnabled != null && (bool) orgs[i].whiteLabelEnabled
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 });
                 await dbContext.SaveChangesAsync();
 
@@ -103,14 +98,17 @@ namespace DataMigration
 
                     if (userOldProfiles.Count > 0)
                     {
-                        await dbContext.AddAsync(new OrganizationUser
+                        await dbContext.AddAsync(new OrganisationUser
                         {
                             UserId = userOldProfiles[0],
-                            OrganizationId = newOrgId
+                            OrganisationId = newOrgId,
+                            IsOwner = false,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
                         });
-                        await dbContext.SaveChangesAsync();
                     }
                 }
+                await dbContext.SaveChangesAsync();
             }
 
             Console.WriteLine("Done.");
@@ -146,45 +144,36 @@ namespace DataMigration
                 await dbContext.AddAsync(new Creator
                 {
                     Id = creatorId,
-                    UserId = dbContext.UserOldProfiles.Where(user => user.OldUserId == accounts[i].uniqueIdentifiers.oauthLookupId).First().NewUserId
+                    UserId = dbContext.UserOldProfiles.Where(user => user.OldUserId == accounts[i].uniqueIdentifiers.oauthLookupId).First().NewUserId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    // Adding static value until we have implemented this.
+                    AddressId = Guid.Parse("82c5e076-9a87-401b-834f-2959d04c7b70")
                 });
                 await dbContext.SaveChangesAsync();
 
-                int socialPlatformId = 0;
-                switch (accounts[i].platform)
+                int socialPlatformId = accounts[i].platform switch
                 {
-                    case "instagram":
-                        socialPlatformId = (int)Enum.SocialPlatforms.INSTAGRAM;
-                        break;
-                    case "twitter":
-                        socialPlatformId = (int)Enum.SocialPlatforms.TWITTER;
-                        break;
-                    case "facebook":
-                        socialPlatformId = (int)Enum.SocialPlatforms.FACEBOOK;
-                        break;
-                    case "youtube":
-                        socialPlatformId = (int)Enum.SocialPlatforms.YOUTUBE;
-                        break;
-                    case "twitch":
-                        socialPlatformId = (int)Enum.SocialPlatforms.TWITCH;
-                        break;
-                }
+                    "instagram" => (int)Enum.SocialPlatforms.INSTAGRAM,
+                    "twitter" => (int)Enum.SocialPlatforms.TWITTER,
+                    "facebook" => (int)Enum.SocialPlatforms.FACEBOOK,
+                    "youtube" => (int)Enum.SocialPlatforms.YOUTUBE,
+                    "twitch" => (int)Enum.SocialPlatforms.TWITCH,
+                    _ => 0
+                };
 
                 await dbContext.AddAsync(new CreatorSocialAccount
                 {
                     CreatorId = creatorId,
-                    // TODO: Find out what the enum looks like and which platform has which ID.
-                    SocialPlatformId = socialPlatformId,
-                    SocialPlatformUserId = accounts[i].uniqueIdentifiers.platformUserId,
-                    // TODO: Check to see if needs changing (What is the enum going to look like?)
-                    Status = accounts[i].archived 
-                        ? (int)Enum.AccountStatus.ARCHIVED 
-                        : (int)Enum.AccountStatus.ACTIVE,
+                    // TODO: Update this when fixed on the migration.
+                    SocialPlantformId = socialPlatformId,
+                    // TODO: Find out why this has now been removed
+                    // SocialPlatformUserId = accounts[i].uniqueIdentifiers.platformUserId,
                     Name = accounts[i].meta.name,
                     Avatar = accounts[i].meta.avatar,
                     Token = oAuthFlowStorage.accessToken,
                     RefreshToken = oAuthFlowStorage.refreshToken,
-                    ConnectedAt = Convert.ToDateTime(accounts[i].connectedOn?.date),
+                    CreatedAt = Convert.ToDateTime(accounts[i].connectedOn?.date),
                     UpdatedAt = Convert.ToDateTime(accounts[i].updatedAt?.date)
                 });
                 await dbContext.SaveChangesAsync();
@@ -196,6 +185,7 @@ namespace DataMigration
         public static async Task MigratePostAsync(string postsData, string detailedPostClusterData)
         {
             if (postsData == null || detailedPostClusterData == null) return;
+            await Utils.Validator.ValidateSocialPlatformsAsync();
 
             List<OldModel.Posts> posts = JsonSerializer.Deserialize<List<OldModel.Posts>>(postsData);
             List<OldModel.DetailedPostsCluster> detailedPostClusters = JsonSerializer.Deserialize<List<OldModel.DetailedPostsCluster>>(detailedPostClusterData);
@@ -216,7 +206,8 @@ namespace DataMigration
                 {
                     Id = newPostId,
                     CreatorSocialAccountId = accountId,
-                    SocialMediaUid = creatorSocialAccount.SocialPlatformUserId,
+                    // TODO: Update for any new changes
+                    SocialMediaUid = "",
                     CreatedAt = Convert.ToDateTime(posts[i].createdAt?.date)
                 });
                 await dbContext.SaveChangesAsync();
@@ -237,7 +228,8 @@ namespace DataMigration
                         await dbContext.AddAsync(new SocialAccountStatMetrics
                         {
                             SocialPlatformId = (int)Enum.SocialPlatforms.TWITTER,
-                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            // TODO: Update for any new changes
+                            // Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
                             Name = $"Twitter Post - {posts[i].platformPostId}"
                         });
                         break;
@@ -245,7 +237,8 @@ namespace DataMigration
                         await dbContext.AddAsync(new SocialAccountStatMetrics
                         {
                             SocialPlatformId = (int)Enum.SocialPlatforms.INSTAGRAM,
-                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            // TODO: Update for any new changes
+                            // Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
                             Name = $"Instagram Post - {posts[i].platformPostId}"
                         });
                         break;
@@ -253,7 +246,8 @@ namespace DataMigration
                         await dbContext.AddAsync(new SocialAccountStatMetrics
                         {
                             SocialPlatformId = (int)Enum.SocialPlatforms.TWITCH,
-                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            // TODO: Update for any new changes
+                            // Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
                             Name = $"Twitch Post - {posts[i].platformPostId}"
                         });
                         break;
@@ -261,7 +255,8 @@ namespace DataMigration
                         await dbContext.AddAsync(new SocialAccountStatMetrics
                         {
                             SocialPlatformId = (int)Enum.SocialPlatforms.YOUTUBE,
-                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            // TODO: Update for any new changes
+                            // Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
                             Name = $"YouTube Post - {posts[i].platformPostId}"
                         });
                         break;
@@ -269,7 +264,8 @@ namespace DataMigration
                         await dbContext.AddAsync(new SocialAccountStatMetrics
                         {
                             SocialPlatformId = (int)Enum.SocialPlatforms.FACEBOOK,
-                            Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
+                            // TODO: Update for any new changes
+                            // Slug = $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}",
                             Name = $"Facebook Post - {posts[i].platformPostId}"
                         });
                         break;
@@ -281,9 +277,9 @@ namespace DataMigration
                     await dbContext.AddAsync(new SocialAccountPostStatHistory
                     {
                         SocialAccountPostId = newPostId,
-                        SocialAccountStatMetricId = dbContext.SocialAccountStatMetrics
-                            .Where(metric => metric.Slug == $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}")
-                            .First().Id,
+                        //SocialAccountStatMetricId = dbContext.SocialAccountStatMetrics
+                        //    .Where(metric => metric.Slug == $"{creatorSocialAccount.SocialPlatformUserId}_{posts[i].platformPostId}")
+                        //    .First().Id,
                         CreatorSocialRefreshId = dbContext.CreatorSocialRefreshes
                             .Where(account => account.CreatorSocialAccountId == creatorSocialAccount.Id)
                             .Last().Id,
@@ -313,8 +309,8 @@ namespace DataMigration
 
                 await dbContext.AddAsync(new SocialAccountStatMetrics
                 {
-                    SocialPlatformId = creatorSocialAccount.SocialPlatformId,
-                    Slug = $"{creatorSocialAccount.SocialPlatformUserId}",
+                    SocialPlatformId = creatorSocialAccount.SocialPlantformId,
+                    // Slug = $"{creatorSocialAccount.SocialPlatformUserId}",
                     Name = $"Account Stat - {detailedStatsClusters[i].accountId.oid}"
                 });
                 await dbContext.SaveChangesAsync();
@@ -323,12 +319,12 @@ namespace DataMigration
                 {
                     await dbContext.AddAsync(new SocialAccountStatHistory
                     {
-                        SocialAccountStatMetricId = dbContext.SocialAccountStatMetrics
-                        .Where(metric => metric.Slug == $"{creatorSocialAccount.SocialPlatformUserId}")
-                        .Last().Id,
+                        //SocialAccountStatMetricId = dbContext.SocialAccountStatMetrics
+                        //    .Where(metric => metric.Slug == $"{creatorSocialAccount.SocialPlatformUserId}")
+                        //    .Last().Id,
                         CreatorSocialRefreshId = dbContext.CreatorSocialRefreshes
-                        .Where(account => account.CreatorSocialAccountId == creatorSocialAccount.Id)
-                        .Last().Id,
+                            .Where(account => account.CreatorSocialAccountId == creatorSocialAccount.Id)
+                            .Last().Id,
                         CollectedAt = Convert.ToDateTime(detailedStatsClusters[i].startDate?.date)
                     });
                 }

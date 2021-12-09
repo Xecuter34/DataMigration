@@ -6,8 +6,9 @@ namespace DataMigration.Enum
 {
     enum RefreshStatus
     {
-        PROCESSING = 1,
-        COMPLETED = 2,
-        FAILED = 3
+        PENDING = 1,
+        PROCESSING = 2,
+        COMPLETED = 3,
+        FAILED = 4
     }
 }
