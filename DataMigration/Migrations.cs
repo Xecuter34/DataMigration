@@ -140,17 +140,26 @@ namespace DataMigration
                 });
                 await dbContext.SaveChangesAsync();
 
+                Guid t = dbContext.UserOldProfiles.Where(user => user.OldUserId == accounts[i].uniqueIdentifiers.oauthLookupId).First().NewUserId;
                 // Rest of schema doesn't exist on old/can't create value for it...
-                await dbContext.AddAsync(new Creator
+                List<Creator> x =  dbContext.Creators.Where(y => y.UserId == t).ToList();
+                if (x.Count() == 0)
                 {
-                    Id = creatorId,
-                    UserId = dbContext.UserOldProfiles.Where(user => user.OldUserId == accounts[i].uniqueIdentifiers.oauthLookupId).First().NewUserId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    // Adding static value until we have implemented this.
-                    AddressId = Guid.Parse("82c5e076-9a87-401b-834f-2959d04c7b70")
-                });
-                await dbContext.SaveChangesAsync();
+                    await dbContext.AddAsync(new Creator
+                    {
+                        Id = creatorId,
+                        UserId = t,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        // Adding static value until we have implemented this.
+                        AddressId = Guid.Parse("82c5e076-9a87-401b-834f-2959d04c7b70")
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+                else
+                {
+                    creatorId = x[0].Id;
+                }
 
                 int socialPlatformId = accounts[i].platform switch
                 {
@@ -166,13 +175,13 @@ namespace DataMigration
                 {
                     CreatorId = creatorId,
                     // TODO: Update this when fixed on the migration.
-                    SocialPlantformId = socialPlatformId,
-                    // TODO: Find out why this has now been removed
-                    // SocialPlatformUserId = accounts[i].uniqueIdentifiers.platformUserId,
+                    SocialPlatformId = socialPlatformId,
+                    PlatformUniqueIdentifier = accounts[i].uniqueIdentifiers.platformUserId,
                     Name = accounts[i].meta.name,
                     Avatar = accounts[i].meta.avatar,
                     Token = oAuthFlowStorage.accessToken,
                     RefreshToken = oAuthFlowStorage.refreshToken,
+                    SocialAccountStatusId = 1,
                     CreatedAt = Convert.ToDateTime(accounts[i].connectedOn?.date),
                     UpdatedAt = Convert.ToDateTime(accounts[i].updatedAt?.date)
                 });
@@ -309,7 +318,7 @@ namespace DataMigration
 
                 await dbContext.AddAsync(new SocialAccountStatMetrics
                 {
-                    SocialPlatformId = creatorSocialAccount.SocialPlantformId,
+                    SocialPlatformId = creatorSocialAccount.SocialPlatformId,
                     // Slug = $"{creatorSocialAccount.SocialPlatformUserId}",
                     Name = $"Account Stat - {detailedStatsClusters[i].accountId.oid}"
                 });

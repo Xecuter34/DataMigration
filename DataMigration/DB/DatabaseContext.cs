@@ -33,13 +33,6 @@ namespace DataMigration.DB
                     $"Password={Environment.GetEnvironmentVariable("Password")}")
                 .UseSnakeCaseNamingConvention();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<CreatorSocialAccount>(
-                eb =>
-                {
-                    eb.Property(c => c.Status).HasColumnType("SocialAccountStatus");
-                });
-        }
     }
+    
 }

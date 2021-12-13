@@ -7,6 +7,7 @@ namespace DataMigration.DB.Models
     public class Creator
     {
         public Guid Id { get; set; }
+       // public Guid CreatorId { get; set; }
         public Guid UserId { get; set; }
         public Guid AddressId { get; set; }
         public DateTime DateOfBirth { get; set; }

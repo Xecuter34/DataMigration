@@ -20,7 +20,7 @@ namespace DataMigration
             }
             else
             {
-                files = HandlePath("D:\\Repo\\Edge");
+                files = HandlePath("C:\\Users\\booli\\edge\\migrations");
             }
 
             if (files.Count == 0)
