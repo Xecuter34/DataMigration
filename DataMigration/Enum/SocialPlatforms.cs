@@ -27,5 +27,18 @@ namespace DataMigration.Enum
                 _ => "NO_VALUE_GIVEN",
             };
         }
+
+        public static int GetIntByString(string platformName)
+        {
+            return platformName switch
+            {
+                "instagram" => (int)SocialPlatforms.INSTAGRAM,
+                "twitter" => (int)SocialPlatforms.TWITTER,
+                "facebook" => (int)SocialPlatforms.FACEBOOK,
+                "youtube" => (int)SocialPlatforms.YOUTUBE,
+                "twitch" => (int)SocialPlatforms.TWITCH,
+                _ => 0
+            };
+        }
     }
 }

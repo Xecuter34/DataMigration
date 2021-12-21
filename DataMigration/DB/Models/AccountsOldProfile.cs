@@ -9,5 +9,6 @@ namespace DataMigration.DB.Models
         public int Id { get; set; }
         public Guid NewAccountId { get; set; }
         public string OldAccountId { get; set; }
+        public string Platform { get; set; }
     }
 }

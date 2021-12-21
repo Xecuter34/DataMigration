@@ -17,12 +17,16 @@ namespace DataMigration.DB
         public DbSet<CreatorSocialRefreshData> CreatorSocialRefreshData { get; set; }
         public DbSet<SocialPlatform> SocialPlatforms { get; set; }
         public DbSet<SocialAccountPost> SocialAccountPosts { get; set; }
-        public DbSet<SocialAccountPostStatHistory> SocialAccountPostStatHistories { get; set; }
-        public DbSet<SocialAccountPostStatLatest> SocialAccountPostStatLatests { get; set; }
-        public DbSet<SocialAccountStatHistory> SocialAccountStatHistories { get; set; }
-        public DbSet<SocialAccountStatLatest> SocialAccountStatLatests { get; set; }
-        public DbSet<SocialAccountStatMetrics> SocialAccountStatMetrics { get; set; }
+        public DbSet<SocialAccountPostStatHistory> SocialAccountPostStatsHistory { get; set; }
+        public DbSet<SocialAccountPostStatLatest> SocialAccountPostStatsLatest { get; set; }
+        public DbSet<SocialAccountStatHistory> SocialAccountStatsHistory { get; set; }
+        public DbSet<SocialAccountStatLatest> SocialAccountStatsLatest { get; set; }
+        public DbSet<SocialAccountStatMetrics> SocialAccountStatsMetrics { get; set; }
         public DbSet<AccountsOldProfile> AccountsOldProfiles { get; set; }
+        public DbSet<Address> Addresses { get; set; }
+        public DbSet<OrganisationCreator> OrganisationCreators { get; set; }
+        public DbSet<OrganisationOldProfile> OrganisationOldProfiles { get; set; }
+        public DbSet<SocialAccountPostStatMetrics> SocialAccountPostStatsMetrics { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder

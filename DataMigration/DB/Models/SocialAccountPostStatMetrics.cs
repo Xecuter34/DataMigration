@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DataMigration.DB.Models
 {
-    public class SocialAccountStatMetrics
+    public class SocialAccountPostStatMetrics
     {
         public int Id { get; set; }
         public string Slug { get; set; }

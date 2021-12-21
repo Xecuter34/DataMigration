@@ -28,12 +28,11 @@ namespace DataMigration.Utils
 
                 foreach (string platform in platforms)
                 {
-                    System.Enum.TryParse(platform, out SocialPlatforms socialPlatform);
                     dbContext.Add(new SocialPlatform
                     {
-                        Id = Guid.Parse(socialPlatform.GetString()),
                         Slug = platform,
                         Name = StringExtensions.FirstCharToUpper(platform),
+                        CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     });
                 }
