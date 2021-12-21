@@ -4,6 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "Username": "postgres",
+        "FilePath": "D:\\Repo\\Edge",
         "Host": "localhost",
         "Password": "sJvCv34QYVAy",
         "Port": "5433",

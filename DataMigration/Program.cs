@@ -20,7 +20,7 @@ namespace DataMigration
             }
             else
             {
-                files = HandlePath("D:\\Repo\\Edge");
+                files = HandlePath(Environment.GetEnvironmentVariable("FilePath"));
             }
 
             if (files.Count == 0)
