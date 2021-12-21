@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using NDesk.Options;
 
 namespace DataMigration
 {
@@ -21,7 +20,7 @@ namespace DataMigration
             }
             else
             {
-                files = HandlePath("D:\\Repo\\Edge\\users.json");
+                files = HandlePath(Environment.GetEnvironmentVariable("FilePath"));
             }
 
             if (files.Count == 0)
@@ -35,10 +34,14 @@ namespace DataMigration
 
         private async static Task Migrate(IDictionary<string, string> files)
         {
-            Migrations migration = new Migrations();
-            await migration.MigrateUsersAsync(files["users"]);
+            //await Migrations.MigrateUsersAsync(files["users"]);
+            //await Migrations.MigrateOrganisationsAsync(files["organizations"]);
+            //await Migrations.MigrateAccountsAsync(files["trackedsocials"], files["accounts"], files["oauthflowstorages"]);
+            await Migrations.MigratePostAsync(files["posts"], files["detailedpostclusters"]);
+            await Migrations.MigrateStatsAsync(files["detailedstatclusters"]);
             Console.WriteLine("\nMigration Completed successfully.");
         }
+
         private static IDictionary<string, string> HandlePath(string path)
         {
             IDictionary<string, string> files = new Dictionary<string, string>();
@@ -53,7 +56,7 @@ namespace DataMigration
                     {
                         if (Path.GetExtension(filePath) == ".json")
                         {
-                            string fileData = File.ReadAllText(path);
+                            string fileData = File.ReadAllText(filePath);
                             string fileName = Path.GetFileName(filePath).Split(".")[0];
                             files.Add(fileName, fileData);
                         }

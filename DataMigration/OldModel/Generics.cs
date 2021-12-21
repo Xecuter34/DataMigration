@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace DataMigration.OldModel.Generics
 {
@@ -18,5 +19,12 @@ namespace DataMigration.OldModel.Generics
     {
         [JsonPropertyName("$date")]
         public string date { get; set; }
+    }
+
+    class Slices
+    {
+        public ObjectId _id { get; set; }
+        public Date collectedAt { get; set; }
+        public IDictionary<string, dynamic> data { get; set; }
     }
 }
