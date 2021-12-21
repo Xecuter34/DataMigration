@@ -259,8 +259,9 @@ namespace DataMigration
                         });
                         await dbContext.SaveChangesAsync();
 
-                        foreach (Slices slice in detailedPostCluster.slices)
+                        for (int ii = 0; ii < detailedPostCluster.slices.Count(); ii++)
                         {
+                            Slices slice = detailedPostCluster.slices[ii];
                             CreatorSocialRefresh newCreatorSocialRefresh = new CreatorSocialRefresh
                             {
                                 CreatorSocialAccountId = creatorSocialAccount.Id,
@@ -276,6 +277,16 @@ namespace DataMigration
 
                             foreach (var data in slice.data)
                             {
+                                double value = .0f;
+                                try
+                                {
+                                    value = data.Value.GetDouble();
+                                }
+                                catch (Exception)
+                                {
+                                    // Failed to convert the value for some reason, move on to the next one.
+                                    continue;
+                                }
                                 List<SocialAccountPostStatMetrics> socialAccountPostStatMetrics = dbContext.SocialAccountPostStatsMetrics.Where(s => s.Slug == data.Key).ToList();
                                 SocialAccountPostStatMetrics socialAccountPostStatMetric;
                                 if (socialAccountPostStatMetrics.Count() == 0)
@@ -300,20 +311,20 @@ namespace DataMigration
                                 SocialAccountPostStatHistory socialAccountPostStatHistory = new SocialAccountPostStatHistory
                                 {
                                     CreatorSocialRefreshId = newCreatorSocialRefresh.Id,
-                                    Value = data.Value.GetDouble(),
-                                    CreatedAt = Convert.ToDateTime(posts[i].createdAt?.date),
+                                    Value = value,
+                                    CreatedAt = Convert.ToDateTime(slice.collectedAt?.date),
                                     SocialAccountPostStatsMetricId = socialAccountPostStatMetric.Id,
                                     SocialAccountPostId = newPostId
                                 };
                                 await dbContext.AddAsync(socialAccountPostStatHistory);
                                 await dbContext.SaveChangesAsync();
 
-                                if (posts[posts.Count - 1]._id.oid == detailedPostCluster._id.oid)
+                                if (detailedPostCluster.slices[detailedPostCluster.slices.Count() - 1]._id.oid == detailedPostCluster._id.oid)
                                 {
                                     SocialAccountPostStatLatest socialAccountPostStatLatest = new SocialAccountPostStatLatest
                                     {
-                                        Value = data.Value.GetDouble(),
-                                        CreatedAt = Convert.ToDateTime(posts[i].createdAt?.date),
+                                        Value = value,
+                                        CreatedAt = Convert.ToDateTime(slice.collectedAt?.date),
                                         UpdatedAt = DateTime.UtcNow,
                                         SocialAccountPostStatsMetricId = socialAccountPostStatMetric.Id,
                                         SocialAccountPostId = newPostId
@@ -352,7 +363,6 @@ namespace DataMigration
 
                     if (detailedStatCluster != null && creatorSocialAccounts.Count > 0)
                     {
-                        // Figure out how to get specific from platform from just accounts
                         CreatorSocialAccount creatorSocialAccount = creatorSocialAccounts.First(c => c.SocialPlatformId == Enum.SocialPlatformsExtensions.GetIntByString(account.Platform));
                         foreach (Slices slice in detailedStatsClusters[i].slices)
                         {
@@ -371,6 +381,16 @@ namespace DataMigration
 
                             foreach (var data in slice.data)
                             {
+                                double value = .0f;
+                                try
+                                {
+                                    value = data.Value.GetDouble();
+                                }
+                                catch (Exception)
+                                {
+                                    // Failed to convert the value for some reason, move on to the next one.
+                                    continue;
+                                }
                                 List<SocialAccountStatMetrics> socialAccountStatMetrics = dbContext.SocialAccountStatsMetrics.Where(s => s.Slug == data.Key).ToList();
                                 SocialAccountStatMetrics socialAccountStatMetric;
                                 if (socialAccountStatMetrics.Count() == 0)
@@ -394,20 +414,20 @@ namespace DataMigration
                                 SocialAccountStatHistory socialAccountStatHistory = new SocialAccountStatHistory
                                 {
                                     CreatorSocialRefreshId = newCreatorSocialRefresh.Id,
-                                    Value = data.Value.GetDouble(),
-                                    CreatedAt = Convert.ToDateTime(detailedStatsClusters[i].startDate?.date),
+                                    Value = value,
+                                    CreatedAt = Convert.ToDateTime(slice.collectedAt?.date),
                                     SocialAccountStatsMetricId = socialAccountStatMetric.Id
                                 };
                                 await dbContext.SaveChangesAsync();
 
-                                if (detailedStatsClusters[detailedStatsClusters.Count]._id.oid == detailedStatCluster._id.oid)
+                                if (detailedStatsClusters[i].slices[detailedStatsClusters[i].slices.Count() - 1]._id.oid == detailedStatCluster._id.oid)
                                 {
                                     SocialAccountStatLatest socialAccountStatLatest = new SocialAccountStatLatest
                                     {
                                         CreatorSocialAccountId = account.NewAccountId,
                                         SocialAccountStatsMetricId = socialAccountStatMetric.Id,
-                                        Value = data.Value.GetDouble(),
-                                        CreatedAt = Convert.ToDateTime(detailedStatsClusters[i].startDate?.date),
+                                        Value = value,
+                                        CreatedAt = Convert.ToDateTime(slice.collectedAt?.date),
                                         UpdatedAt = DateTime.UtcNow
                                     };
                                     await dbContext.AddAsync(socialAccountStatLatest);
