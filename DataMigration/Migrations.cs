@@ -188,26 +188,17 @@ namespace DataMigration
                     creatorId = x[0].Id;
                 }
 
-                int socialPlatformId = accounts[i].platform switch
-                {
-                    "instagram" => (int)Enum.SocialPlatforms.INSTAGRAM,
-                    "twitter" => (int)Enum.SocialPlatforms.TWITTER,
-                    "facebook" => (int)Enum.SocialPlatforms.FACEBOOK,
-                    "youtube" => (int)Enum.SocialPlatforms.YOUTUBE,
-                    "twitch" => (int)Enum.SocialPlatforms.TWITCH,
-                    _ => 0
-                };
-
                 await dbContext.AddAsync(new CreatorSocialAccount
                 {
                     CreatorId = creatorId,
-                    SocialPlatformId = socialPlatformId,
+                    Status = "Active",
                     PlatformUniqueIdentifier = accounts[i].uniqueIdentifiers.platformUserId ?? "NOT_SUPPLIED",
                     Name = accounts[i].meta.name ?? "NOT_SUPPLIED",
                     Avatar = accounts[i].meta.avatar,
                     Token = oAuthFlowStorage?.accessToken,
                     RefreshToken = oAuthFlowStorage?.refreshToken,
-                    SocialAccountStatusId = 1,
+                    Platform = accounts[i].platform,
+                    NextUpdateAt = Convert.ToDateTime(accounts[i].nextUpdateDue?.date),
                     CreatedAt = Convert.ToDateTime(accounts[i].connectedOn?.date),
                     UpdatedAt = Convert.ToDateTime(accounts[i].updatedAt?.date)
                 });
@@ -228,6 +219,8 @@ namespace DataMigration
             using DatabaseContext dbContext = new DatabaseContext();
             using ProgressBar progressBar = new ProgressBar();
 
+            Console.WriteLine(posts.Count);
+
             Console.Write($"Migrating posts data... ");
             for (int i = 0; i < posts.Count; i++)
             {
@@ -243,7 +236,7 @@ namespace DataMigration
 
                     if (detailedPostCluster != null && creatorSocialAccounts.Count > 0)
                     {
-                        CreatorSocialAccount creatorSocialAccount = creatorSocialAccounts.First(c => c.SocialPlatformId == Enum.SocialPlatformsExtensions.GetIntByString(account.Platform));
+                        CreatorSocialAccount creatorSocialAccount = creatorSocialAccounts.First(c => c.Platform == account.Platform);
                         if (dbContext.SocialAccountPosts.FirstOrDefault(s => s.CreatorSocialAccountId == creatorSocialAccount.Id && s.SocialMedialUid == posts[i].platformPostId) != null) continue;
                         await dbContext.AddAsync(new SocialAccountPost
                         {
@@ -363,7 +356,7 @@ namespace DataMigration
 
                     if (detailedStatCluster != null && creatorSocialAccounts.Count > 0)
                     {
-                        CreatorSocialAccount creatorSocialAccount = creatorSocialAccounts.First(c => c.SocialPlatformId == Enum.SocialPlatformsExtensions.GetIntByString(account.Platform));
+                        CreatorSocialAccount creatorSocialAccount = creatorSocialAccounts.First(c => c.Platform == account.Platform);
                         foreach (Slices slice in detailedStatsClusters[i].slices)
                         {
                             CreatorSocialRefresh newCreatorSocialRefresh = new CreatorSocialRefresh
@@ -418,6 +411,7 @@ namespace DataMigration
                                     CreatedAt = Convert.ToDateTime(slice.collectedAt?.date),
                                     SocialAccountStatsMetricId = socialAccountStatMetric.Id
                                 };
+                                await dbContext.AddAsync(socialAccountStatHistory);
                                 await dbContext.SaveChangesAsync();
 
                                 if (detailedStatsClusters[i].slices[detailedStatsClusters[i].slices.Count() - 1]._id.oid == detailedStatCluster._id.oid)

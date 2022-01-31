@@ -6,9 +6,9 @@
         "Username": "postgres",
         "FilePath": "D:\\Repo\\Edge",
         "Host": "localhost",
-        "Password": "sJvCv34QYVAy",
-        "Port": "5433",
-        "Database": "edge_dev"
+        "Password": "postgres",
+        "Port": "15432",
+        "Database": "postgres"
       }
     }
   }

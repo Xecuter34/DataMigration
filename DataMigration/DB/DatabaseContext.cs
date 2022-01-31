@@ -1,5 +1,6 @@
 ﻿using DataMigration.DB.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 
 namespace DataMigration.DB
@@ -35,8 +36,8 @@ namespace DataMigration.DB
                     $"Database={Environment.GetEnvironmentVariable("Database")};" +
                     $"Username={Environment.GetEnvironmentVariable("Username")};" +
                     $"Password={Environment.GetEnvironmentVariable("Password")}")
-                .UseSnakeCaseNamingConvention();
-
+                .UseSnakeCaseNamingConvention()
+                .LogTo(Console.WriteLine, LogLevel.Information);
     }
     
 }
