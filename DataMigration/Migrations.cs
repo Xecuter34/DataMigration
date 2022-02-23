@@ -188,11 +188,19 @@ namespace DataMigration
                     creatorId = x[0].Id;
                 }
 
+                string platformUniqueIdentifier = accounts[i].platform switch
+                {
+                    "instagram" => accounts[i].uniqueIdentifiers.igId,
+                    "facebook" => accounts[i].uniqueIdentifiers.pageId,
+                    "youtube" => accounts[i].uniqueIdentifiers.channelId,
+                    _ => accounts[i].uniqueIdentifiers.platformUserId
+                };
+
                 await dbContext.AddAsync(new CreatorSocialAccount
                 {
                     CreatorId = creatorId,
                     Status = "Active",
-                    PlatformUniqueIdentifier = accounts[i].uniqueIdentifiers.platformUserId ?? "NOT_SUPPLIED",
+                    PlatformUniqueIdentifier = platformUniqueIdentifier ?? "NOT_SUPPLIED",
                     Name = accounts[i].meta.name ?? "NOT_SUPPLIED",
                     Avatar = accounts[i].meta.avatar,
                     Token = oAuthFlowStorage?.accessToken,

@@ -25,6 +25,9 @@ namespace DataMigration.OldModel
     {
         public string oauthLookupId { get; set; }
         public string platformUserId { get; set; }
+        public string pageId { get; set; }
+        public string igId { get; set; }
+        public string channelId { get; set; }
     }
 
     class ExternalSourceRelations
